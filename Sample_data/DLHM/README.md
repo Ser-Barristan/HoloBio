@@ -1,13 +1,33 @@
-**Target hologram — Angular Spectrum method**
+# DLHM Sample Data
 
-Wavelength: 0.532 µm
-Pixel size (dxy): 1.85 µm
-L distance: 10 mm
-Z distance: 2 mm
+This folder contains example holograms acquired using Digital Lensless Holographic Microscopy (DLHM), along with recommended reconstruction parameters.
 
-**Bacterial hologram —  MAS method**
+## Target hologram — Angular Spectrum method
 
-Wavelength: 0.532 µm
-Pixel size (dxy): 1.85 µm
-L distance: 11 mm
-Z distance: 4 mm
+- **Wavelength:** 0.532 µm  
+- **Pixel size (dxy):** 1.85 µm  
+- **Source-to-camera distance (L):** 10 mm  
+- **Reconstruction distance (z):** 2 mm  
+
+---
+
+## Bacterial hologram — MAS method
+
+- **Wavelength:** 0.532 µm  
+- **Pixel size (dxy):** 1.85 µm  
+- **Source-to-camera distance (L):** 11 mm  
+- **Reconstruction distance (z):** 4 mm  
+
+---
+
+## Paramecium hologram — Kreuzer method
+
+- **Wavelength:** 0.532 µm  
+- **Pixel size (dxy):** 6.9 µm  
+- **Source-to-camera distance (L):** 20 mm  
+
+This example contains three reconstructed views of the same hologram, each focused at a different reconstruction distance:
+
+- **Upper paramecium:** z = 2.8 mm  
+- **Middle paramecium:** z = 6.8 mm  
+- **Lower paramecium:** z = 5.6 mm  
