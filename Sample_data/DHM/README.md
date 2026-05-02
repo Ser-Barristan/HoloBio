@@ -4,7 +4,7 @@ This folder contains example holograms acquired using Digital Holographic Micros
 
 ## Numerical Propagation 
 
-In the **Numerical Propagation** module, the hologram named **`test`** can be used with the following reconstruction parameters:
+The hologram **`test`**  can be reconstructed using the following parameters:
 
 - **Propagation distance:** 8 mm  
 - **Wavelength:** 633 nm  
@@ -22,4 +22,16 @@ The hologram named **`USAF`** can be reconstructed using the following parameter
 
 - **Microscope objective:** 20×  
 - **Wavelength:** 633 nm  
-- **Pixel size:** 3.75 µm 
+- **Pixel size:** 3.75 µm
+
+## Phase-Shifting
+
+The holograms **`Onion`**  can be reconstructed using the following parameters:
+
+- **Wavelength:** 633 nm  
+- **Pixel size:** 5.32 µm  
+
+The holograms **`USAF`**  can be reconstructed using the following parameters:
+
+- **Wavelength:** 532 nm  
+- **Pixel size:** 2.4 µm  
