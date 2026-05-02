@@ -12,8 +12,9 @@ In the **Numerical Propagation** module, the hologram named **`test`** can be us
 
 ## Phase Compensation
 
-In the **Phase Compensation** module, the hologram named **`test`** can be used with the following reconstruction parameters:
+In the **Phase Compensation** module, the hologram named **`RBC`** can be used with the following reconstruction parameters:
 
-- **Propagation distance:** 8 mm  
+- **Microscope objective:** 40×  
 - **Wavelength:** 633 nm  
-- **Pixel size:** 3.75 µm  
+- **Pixel size:** 3.75 µm 
+  
