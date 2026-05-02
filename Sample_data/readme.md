@@ -1,15 +1,11 @@
 # Sample Data
 
-This folder contains example holograms and related data to test and demonstrate the main functionalities of the software.
+This folder contains example data for testing and demonstrating the main functionalities of HoloBio.
 
-These datasets can be used to reproduce typical workflows, including real-time reconstruction, phase compensation, and particle tracking.
+The data are organized according to the imaging modality and intended use:
 
-## Contents
-- Example holograms acquired under different conditions
-- Optional reference data (amplitude and phase reconstructions)
-- Suggested parameters for processing
+- `DHM/`: Example holograms acquired using Digital Holographic Microscopy.
+- `DLHM/`: Example holograms acquired using Digital Lensless Holographic Microscopy.
+- `real_time_videos/`: Example videos for testing real-time processing workflows in DHM and DLHM.
 
-## Usage
-Load any of the provided holograms using the **Load** option in the interface and apply the available reconstruction and compensation tools.
-
-These examples are intended for demonstration and reproducibility purposes.
+These files are intended for demonstration, testing, and reproducibility purposes.
