@@ -12,9 +12,14 @@ In the **Numerical Propagation** module, the hologram named **`test`** can be us
 
 ## Phase Compensation
 
-In the **Phase Compensation** module, the hologram named **`RBC`** and **`Fungal`** can be used with the following reconstruction parameters:
+The holograms **`RBC`** and **`Fungal`** can be reconstructed using the following parameters:
 
 - **Microscope objective:** 40×  
 - **Wavelength:** 633 nm  
 - **Pixel size:** 3.75 µm 
-  
+
+The hologram named **`USAF`** can be reconstructed using the following parameters:
+
+- **Microscope objective:** 20×  
+- **Wavelength:** 633 nm  
+- **Pixel size:** 3.75 µm 
