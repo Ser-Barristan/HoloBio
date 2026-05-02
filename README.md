@@ -89,7 +89,7 @@ This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. 
 
 For more detailed information, please refer to the **User Guide** located in the `Complementary_info` directory of this repository:
 
-*   📄 **User Guide:** [Complementary_info/User_Manual.pdf](Complementary_info/User_Manual.pdf) - Comprehensive manual covering installation, mode selection (Real-Time vs Offline), and advanced reconstruction procedures.
+*   📄 **User Guide:** [Complementary_info/User_Manual.pdf](Complementary_info/Manual.pdf) - Comprehensive manual covering installation, mode selection (Real-Time vs Offline), and advanced reconstruction procedures.
 
 ## Support or Contact
 
