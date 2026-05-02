@@ -1,5 +1,0 @@
-USAF test hologram
-
-Microscope objective: 20×
-Wavelength: 633 nm
-Pixel size (dxy): 3.75 µm

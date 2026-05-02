@@ -1,5 +1,0 @@
-Fungal sample hologram
-
-Microscope objective: 40×
-Wavelength: 633 nm
-Pixel size (dxy): 3.75 µm
