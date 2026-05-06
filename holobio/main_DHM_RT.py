@@ -1,17 +1,17 @@
 import zipfile, io
 import customtkinter as ctk
-from .parallel_rc import *
+from parallel_rc import *
 from PIL import ImageTk, Image
 from tkinter import filedialog, messagebox
 import math
 import cv2, os, time, tkinter as tk
 from importlib import import_module, reload
-from . import functions_GUI as fGUI
+import functions_GUI as fGUI
 import threading, queue
 from pandastable.core import Table
 import pandas as pd
 import re
-from .track_particles_kalman import track_particles_kalman as track
+from track_particles_kalman import track_particles_kalman as track
 from scipy.ndimage import median_filter
 
 import numpy as np
@@ -21,6 +21,7 @@ from scipy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.signal import hilbert
 from scipy.sparse.linalg import svds
 from skimage.restoration import unwrap_phase
+
 
 def reference_wave(fx_max, fy_max, m, n, _lambda, dx, k, fx_0, fy_0, M, N, dy=None):
     """
@@ -54,7 +55,8 @@ def reference_wave(fx_max, fy_max, m, n, _lambda, dx, k, fx_0, fy_0, M, N, dy=No
     ref_wave = np.exp(1j * k * (dx * np.sin(theta_x) * m + dy * np.sin(theta_y) * n))
     return ref_wave
 
-def spatial_filter(holo, M, N, save='Yes', factor=2.0, rotate:bool=False):
+
+def spatial_filter(holo, M, N, save='Yes', factor=2.0, rotate: bool = False):
     # Apply Fourier transform to the hologram
     ft_holo = fftshift(fft2(fftshift(holo)))
     ft_holo[:5, :5] = 0  # suppress low-frequency components at the origin
@@ -120,6 +122,7 @@ def spatial_filter(holo, M, N, save='Yes', factor=2.0, rotate:bool=False):
 
     return ft_holo, holo_filtered, fx_max, fy_max, cir_mask
 
+
 def wrap_to_pi(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
@@ -171,9 +174,9 @@ def vortex_compensation(field, fxOverMax, fyOverMax):
 
     # Crop around the max frequency
     sd = field[
-        int(fyOverMax - cropVortex) : int(fyOverMax + cropVortex),
-        int(fxOverMax - cropVortex) : int(fxOverMax + cropVortex)
-    ]
+         int(fyOverMax - cropVortex): int(fyOverMax + cropVortex),
+         int(fxOverMax - cropVortex): int(fxOverMax + cropVortex)
+         ]
 
     # Hilbert transform
     sd_crop = hilbert_transform_2d(sd, hilbert_or_energy_operator=1)  # 2D Hilbert transform
@@ -247,7 +250,8 @@ def vortex_compensation(field, fxOverMax, fyOverMax):
     positions.append([x_pos, y_pos])
 
     return positions
-    
+
+
 def legendre_compensation(field_compensate, limit, RemovePiston=True, UsePCA=False):
     """
     Compensates the phase of a complex field using a fit with Legendre polynomials.
@@ -358,31 +362,32 @@ def square_legendre_fitting(order, X, Y):
         elif i == 3:
             polynomials.append(Y)
         elif i == 4:
-            polynomials.append((3 * X**2 - 1) / 2)
+            polynomials.append((3 * X ** 2 - 1) / 2)
         elif i == 5:
             polynomials.append(X * Y)
         elif i == 6:
-            polynomials.append((3 * Y**2 - 1) / 2)
+            polynomials.append((3 * Y ** 2 - 1) / 2)
         elif i == 7:
-            polynomials.append((X * (5 * X**2 - 3)) / 2)
+            polynomials.append((X * (5 * X ** 2 - 3)) / 2)
         elif i == 8:
-            polynomials.append((Y * (3 * X**2 - 1)) / 2)
+            polynomials.append((Y * (3 * X ** 2 - 1)) / 2)
         elif i == 9:
-            polynomials.append((X * (3 * Y**2 - 1)) / 2)
+            polynomials.append((X * (3 * Y ** 2 - 1)) / 2)
         elif i == 10:
-            polynomials.append((Y * (5 * Y**2 - 3)) / 2)
+            polynomials.append((Y * (5 * Y ** 2 - 3)) / 2)
         elif i == 11:
-            polynomials.append((35 * X**4 - 30 * X**2 + 3) / 8)
+            polynomials.append((35 * X ** 4 - 30 * X ** 2 + 3) / 8)
         elif i == 12:
-            polynomials.append((X * Y * (5 * X**2 - 3)) / 2)
+            polynomials.append((X * Y * (5 * X ** 2 - 3)) / 2)
         elif i == 13:
-            polynomials.append(((3 * Y**2 - 1) * (3 * X**2 - 1)) / 4)
+            polynomials.append(((3 * Y ** 2 - 1) * (3 * X ** 2 - 1)) / 4)
         elif i == 14:
-            polynomials.append((X * Y * (5 * Y**2 - 3)) / 2)
+            polynomials.append((X * Y * (5 * Y ** 2 - 3)) / 2)
         elif i == 15:
-            polynomials.append((35 * Y**4 - 30 * Y**2 + 3) / 8)
+            polynomials.append((35 * Y ** 4 - 30 * Y ** 2 + 3) / 8)
     return np.stack(polynomials, axis=-1)
-    
+
+
 def fringes_normalization(hologram, R):
     M, N = hologram.shape
     u0 = N // 2
@@ -401,13 +406,12 @@ def fringes_normalization(hologram, R):
     background = np.real(np.fft.ifft2(ib))
 
     s = spiralTransform(ch)
-    
+
     s = np.abs(s)
 
     fringeNorm = np.cos(np.arctan2(s, ch.real))
 
     modulation = np.abs(ch + 1j * s)
-
 
     return background, modulation, fringeNorm
 
@@ -449,14 +453,13 @@ def spiralTransform(c):
         # Inverse transform and apply complex conjugate (for coordinate system consistency)
         sd = np.conj(np.fft.ifft2(CH))
 
-
         return sd
 
     except Exception as e:
         raise e
 
-class App(ctk.CTk):
 
+class App(ctk.CTk):
     _PREFERRED_CAM_KEYWORDS = [
         "imaging",
         "the imaging source",
@@ -629,7 +632,6 @@ class App(ctk.CTk):
         self._init_async_engine()
         self._stop_compensation = threading.Event()
 
-
     def _init_async_engine(self) -> None:
         """Initialize the asynchronous acquisition and reconstruction engine."""
         self._comp_queue: queue.Queue = queue.Queue(maxsize=8)
@@ -646,7 +648,6 @@ class App(ctk.CTk):
         self._vl_last_valid_field = None
         self._target_preview_fps = 30.0
         self._target_reconstruction_fps = 30.0
-
 
     def _init_optimized_reconstruction_state(self) -> None:
         """Initialize the operational state for the reconstruction protocol."""
@@ -680,7 +681,8 @@ class App(ctk.CTk):
         """Request a single model refresh without leaving acquisition mode."""
         self._force_vl_model_refresh = True
         if hasattr(self, "reconstruction_mode_label"):
-            self.reconstruction_mode_label.configure(text=f"Mode: {self.reconstruction_mode_var.get()} | Align next frame")
+            self.reconstruction_mode_label.configure(
+                text=f"Mode: {self.reconstruction_mode_var.get()} | Align next frame")
 
     def _on_reconstruction_correction_changed(self, choice: str) -> None:
         """Update the phase-correction protocol and force a fresh carrier model."""
@@ -745,9 +747,12 @@ class App(ctk.CTk):
         self.fps_status_frame.grid(row=2, column=0, sticky="ew", padx=8, pady=(4, 8))
         self.fps_status_frame.grid_columnconfigure(0, weight=1)
         self.fps_status_frame.grid_columnconfigure(1, weight=1)
-        self.hologram_fps_label = ctk.CTkLabel(self.fps_status_frame, text="Hologram acquisition FPS: 0.0 / 30.0", font=ctk.CTkFont(size=13, weight="bold"))
+        self.hologram_fps_label = ctk.CTkLabel(self.fps_status_frame, text="Hologram acquisition FPS: 0.0 / 30.0",
+                                               font=ctk.CTkFont(size=13, weight="bold"))
         self.hologram_fps_label.grid(row=0, column=0, sticky="w", padx=12, pady=6)
-        self.reconstruction_fps_label = ctk.CTkLabel(self.fps_status_frame, text="Reconstruction display FPS: 0.0 / 30.0", font=ctk.CTkFont(size=13, weight="bold"))
+        self.reconstruction_fps_label = ctk.CTkLabel(self.fps_status_frame,
+                                                     text="Reconstruction display FPS: 0.0 / 30.0",
+                                                     font=ctk.CTkFont(size=13, weight="bold"))
         self.reconstruction_fps_label.grid(row=0, column=1, sticky="e", padx=12, pady=6)
 
     def _reset_fps_measurements(self) -> None:
@@ -838,7 +843,8 @@ class App(ctk.CTk):
                 pass
         if hasattr(self, "reconstruction_fps_label"):
             try:
-                self.reconstruction_fps_label.configure(text=f"Reconstruction display FPS: {recon_fps:.1f} / {source_fps:.1f}")
+                self.reconstruction_fps_label.configure(
+                    text=f"Reconstruction display FPS: {recon_fps:.1f} / {source_fps:.1f}")
             except Exception:
                 pass
 
@@ -926,7 +932,9 @@ class App(ctk.CTk):
                 pass
             self.cap = None
 
-        for attr in ("hologram_frames", "ft_frames", "multi_holo_arrays", "multi_ft_arrays", "phase_arrays", "amplitude_arrays", "phase_frames", "amplitude_frames"):
+        for attr in (
+        "hologram_frames", "ft_frames", "multi_holo_arrays", "multi_ft_arrays", "phase_arrays", "amplitude_arrays",
+        "phase_frames", "amplitude_frames"):
             if hasattr(self, attr):
                 try:
                     getattr(self, attr).clear()
@@ -945,7 +953,7 @@ class App(ctk.CTk):
 
     def pause_visualization(self) -> None:
         """Pauses the current preview (camera or video) *without* closing it."""
-        self.preview_active  = False
+        self.preview_active = False
         if hasattr(self, "video_playing"):
             self.video_playing = False
 
@@ -1026,10 +1034,10 @@ class App(ctk.CTk):
         return True
 
     def _fourier_display_from_hologram(
-        self,
-        hologram: np.ndarray,
-        *,
-        use_log: bool | None = None
+            self,
+            hologram: np.ndarray,
+            *,
+            use_log: bool | None = None
     ) -> np.ndarray:
         """Compute the Fourier-transform display from the hologram."""
         if hologram is None:
@@ -1114,9 +1122,9 @@ class App(ctk.CTk):
 
             model = getattr(self, "_vl_model", None)
             model_is_usable = (
-                model is not None
-                and model.get("shape") == sample.shape
-                and model.get("filter_type") == filter_type
+                    model is not None
+                    and model.get("shape") == sample.shape
+                    and model.get("filter_type") == filter_type
             )
 
             if model_is_usable and model.get("fast_spectral_crop", False) and model.get("crop_model", None) is not None:
@@ -1169,7 +1177,9 @@ class App(ctk.CTk):
         pressing Play or Compensate starts from the beginning. The file path is
         retained to allow deterministic replay after end-of-file events.
         """
-        file_path = filedialog.askopenfilename(title="Select Video File", filetypes=[("Video Files", "*.mp4 *.avi *.mov *.mkv"), ("All files", "*.*")])
+        file_path = filedialog.askopenfilename(title="Select Video File",
+                                               filetypes=[("Video Files", "*.mp4 *.avi *.mov *.mkv"),
+                                                          ("All files", "*.*")])
         if not file_path:
             return
 
@@ -1284,7 +1294,8 @@ class App(ctk.CTk):
             self.cap = None
             return False
 
-        self._set_source_fps(self._read_capture_fps(self.cap, fallback=getattr(self, "source_fps", 30.0)), fallback=getattr(self, "source_fps", 30.0))
+        self._set_source_fps(self._read_capture_fps(self.cap, fallback=getattr(self, "source_fps", 30.0)),
+                             fallback=getattr(self, "source_fps", 30.0))
         try:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         except Exception:
@@ -1392,8 +1403,10 @@ class App(ctk.CTk):
             try:
                 self._comp_queue.put_nowait(data)
             except queue.Full:
-                try: self._comp_queue.get_nowait()
-                except queue.Empty: pass
+                try:
+                    self._comp_queue.get_nowait()
+                except queue.Empty:
+                    pass
                 self._comp_queue.put_nowait(data)
 
     def _compute_comp_arrays(self, gray: np.ndarray, *, first: bool) -> dict:
@@ -1408,7 +1421,7 @@ class App(ctk.CTk):
                 settings = self._get_vortex_legendre_default_settings()
                 self.vl_settings = settings
 
-            data = self._compute_vortex_legendre_arrays(gray,settings=settings,first=first)
+            data = self._compute_vortex_legendre_arrays(gray, settings=settings, first=first)
             self._vl_last_valid_data = data
             return data
 
@@ -1423,12 +1436,10 @@ class App(ctk.CTk):
                 return fallback
 
             holo_u8 = self._normalize_to_uint8(gray)
-            ft_u8 = self._quick_ft_display(gray,max_side=512)
-            black = np.zeros_like(ft_u8,dtype=np.uint8)
+            ft_u8 = self._quick_ft_display(gray, max_side=512)
+            black = np.zeros_like(ft_u8, dtype=np.uint8)
 
             return {"holo": holo_u8, "ft": ft_u8, "ft_unfiltered": ft_u8, "amp": black, "phase": black}
-
-
 
     def _get_vortex_legendre_default_settings(self) -> dict:
         """Define numerical settings for the real-time reconstruction protocol."""
@@ -1450,18 +1461,19 @@ class App(ctk.CTk):
             "use_pca": False,
             "max_reconstruction_side": None,
             "model_update_interval": model_update_interval,
-            "use_vortex_refinement": operation_mode == "alignment" or bool(getattr(self, "_force_vl_model_refresh", True)),
+            "use_vortex_refinement": operation_mode == "alignment" or bool(
+                getattr(self, "_force_vl_model_refresh", True)),
             "fast_spectral_crop": False,
 
             # Preserves the original reconstruction shape without applying a fixed size.
             # When True, the reconstructed object maintains the size of the processed square without additional changes.
-            "preserve_reconstruction_shape": True, 
+            "preserve_reconstruction_shape": True,
             "fixed_reconstruction_side": 768,
 
             "crop_radius_multiplier": 2.5,
             "minimum_crop_half_width": 48,
             "maximum_crop_side": 768,
-            
+
             # Controls whether the filtered Fourier transform is included in reconstruction packets.
             # False: optimizes real-time performance by returning only amplitude and phase (no filtered FT).
             # True: would include filtered FT for diagnostic purposes, but reduces throughput significantly.
@@ -1488,7 +1500,6 @@ class App(ctk.CTk):
         self._vl_median_filter = median_filter
         self._vl_modules_ready = True
 
-
     def _compute_vortex_legendre_arrays(self, gray: np.ndarray, *, settings: dict, first: bool) -> dict:
         """
         Reconstruct one holographic frame using a cached Vortex carrier model.
@@ -1502,7 +1513,8 @@ class App(ctk.CTk):
         self._ensure_vortex_legendre_modules()
 
         holo_u8 = self._normalize_to_uint8(gray)
-        sample, crop_info = self._prepare_vl_processing_frame(gray, max_side=settings.get("max_reconstruction_side", None))
+        sample, crop_info = self._prepare_vl_processing_frame(gray,
+                                                              max_side=settings.get("max_reconstruction_side", None))
         refresh_model = self._vl_should_refresh_model(sample, settings, first)
         return_ft_packet = bool(settings.get("return_filtered_ft_in_recon_packets", False))
 
@@ -1535,7 +1547,8 @@ class App(ctk.CTk):
             )
             phase_correction = None if self._vl_model is None else self._vl_model.get("phase_correction", None)
 
-            if settings.get("apply_legendre", False) and phase_correction is not None and phase_correction.shape == obj_field.shape:
+            if settings.get("apply_legendre",
+                            False) and phase_correction is not None and phase_correction.shape == obj_field.shape:
                 recon_field = obj_field * phase_correction
             else:
                 recon_field = obj_field
@@ -1544,7 +1557,8 @@ class App(ctk.CTk):
         self._vl_last_valid_field = recon_field
 
         ft_u8 = self._vl_log_display(ft_filtered) if ft_filtered is not None else None
-        ft_unfiltered_u8 = self._vl_log_display(ft_unfiltered) if return_ft_packet and ft_unfiltered is not None else None
+        ft_unfiltered_u8 = self._vl_log_display(
+            ft_unfiltered) if return_ft_packet and ft_unfiltered is not None else None
         amp_u8 = self._normalize_to_uint8(np.abs(recon_field))
         phase_u8 = self._phase_to_uint8(np.angle(recon_field))
 
@@ -1586,7 +1600,8 @@ class App(ctk.CTk):
 
         return square, crop_info
 
-    def _spatial_filtering_cf_core(self, field: np.ndarray, height: int, width: int, filter_type: str = "Circular") -> tuple[np.ndarray, np.ndarray, float, float, np.ndarray, float]:
+    def _spatial_filtering_cf_core(self, field: np.ndarray, height: int, width: int, filter_type: str = "Circular") -> \
+    tuple[np.ndarray, np.ndarray, float, float, np.ndarray, float]:
         """
         Correct Fourier-order selection core.
 
@@ -1605,7 +1620,8 @@ class App(ctk.CTk):
             width,
             height,
             save="No",
-            factor=float(getattr(self, "vl_settings", {}).get("factor", 5.0)) if isinstance(getattr(self, "vl_settings", {}), dict) else 5.0,
+            factor=float(getattr(self, "vl_settings", {}).get("factor", 5.0)) if isinstance(
+                getattr(self, "vl_settings", {}), dict) else 5.0,
             rotate=False,
         )
 
@@ -1615,14 +1631,13 @@ class App(ctk.CTk):
         radius = distance / 4.0 if distance > 1e-9 else max(10.0, 0.08 * min(height, width))
 
         if filter_type == "Rectangular":
-            order_mask = self.rectangularMask(height, width, radius, int(round(fy_peak)), int(round(fx_peak))).astype(np.float32)
+            order_mask = self.rectangularMask(height, width, radius, int(round(fy_peak)), int(round(fx_peak))).astype(
+                np.float32)
         else:
             order_mask = circular_mask.astype(np.float32)
 
         filtered_ft = ft_raw * order_mask
         return filtered_ft, ft_raw, float(fx_peak), float(fy_peak), order_mask, float(radius)
-
-
 
     def _vl_should_refresh_model(self, sample: np.ndarray, settings: dict, first: bool) -> bool:
         """
@@ -1645,7 +1660,8 @@ class App(ctk.CTk):
         if self._vl_model.get("filter_type", None) != settings.get("filter_type", "Circular"):
             return True
 
-        if bool(self._vl_model.get("preserve_reconstruction_shape", True)) != bool(settings.get("preserve_reconstruction_shape", True)):
+        if bool(self._vl_model.get("preserve_reconstruction_shape", True)) != bool(
+                settings.get("preserve_reconstruction_shape", True)):
             return True
 
         model_fixed_side = self._vl_model.get("fixed_reconstruction_side", None)
@@ -1668,8 +1684,8 @@ class App(ctk.CTk):
 
         return False
 
-
-    def _vl_get_reconstruction_side(self, settings: dict, sample_shape: tuple[int, int], radius: float | None = None) -> int:
+    def _vl_get_reconstruction_side(self, settings: dict, sample_shape: tuple[int, int],
+                                    radius: float | None = None) -> int:
         """
         Return the fixed square side used by the optimized Vortex reconstruction.
 
@@ -1719,13 +1735,13 @@ class App(ctk.CTk):
         return max(side, 2)
 
     def _vl_make_centered_order_crop(
-        self,
-        ft_raw: np.ndarray,
-        fxm: float,
-        fym: float,
-        radius: float,
-        filter_type: str,
-        crop_side: int,
+            self,
+            ft_raw: np.ndarray,
+            fxm: float,
+            fym: float,
+            radius: float,
+            filter_type: str,
+            crop_side: int,
     ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
         Build a fixed-size Fourier crop centered on the detected diffraction order.
@@ -1769,7 +1785,9 @@ class App(ctk.CTk):
         xx = (start_x + np.arange(crop_side, dtype=np.float32))[None, :]
 
         if filter_type == "Rectangular":
-            mask_crop = ((np.abs(yy - float(fym)) <= float(radius)) & (np.abs(xx - float(fxm)) <= float(radius))).astype(np.float32)
+            mask_crop = (
+                        (np.abs(yy - float(fym)) <= float(radius)) & (np.abs(xx - float(fxm)) <= float(radius))).astype(
+                np.float32)
         else:
             mask_crop = (((yy - float(fym)) ** 2 + (xx - float(fxm)) ** 2) <= float(radius) ** 2).astype(np.float32)
 
@@ -1804,7 +1822,8 @@ class App(ctk.CTk):
 
         return ft_crop * mask_crop
 
-    def _vl_expand_crop_to_full_spectrum(self, ft_raw: np.ndarray, crop_model: dict, mask_crop: np.ndarray) -> np.ndarray:
+    def _vl_expand_crop_to_full_spectrum(self, ft_raw: np.ndarray, crop_model: dict,
+                                         mask_crop: np.ndarray) -> np.ndarray:
         """
         Place the cached crop mask back into the native Fourier grid for display.
 
@@ -1827,14 +1846,13 @@ class App(ctk.CTk):
 
         return ft_filtered_full
 
-
     def _vl_build_model_and_object_field(
-        self,
-        sample: np.ndarray,
-        *,
-        settings: dict,
-        crop_info: dict,
-        return_full_filtered_ft: bool = False,
+            self,
+            sample: np.ndarray,
+            *,
+            settings: dict,
+            crop_info: dict,
+            return_full_filtered_ft: bool = False,
     ) -> tuple[np.ndarray, np.ndarray | None, np.ndarray]:
         """
         Estimate and cache the off-axis carrier model.
@@ -1881,7 +1899,8 @@ class App(ctk.CTk):
                     if vortex_positions:
                         fxm_refined, fym_refined = vortex_positions[0]
                         if np.isfinite(fxm_refined) and np.isfinite(fym_refined):
-                            if abs(float(fxm_refined) - float(fxm)) <= max(radius, 8.0) and abs(float(fym_refined) - float(fym)) <= max(radius, 8.0):
+                            if abs(float(fxm_refined) - float(fxm)) <= max(radius, 8.0) and abs(
+                                    float(fym_refined) - float(fym)) <= max(radius, 8.0):
                                 fxm, fym = float(fxm_refined), float(fym_refined)
                 except Exception as exc:
                     print(f"[Vortex] Refinement skipped: {exc}")
@@ -1897,7 +1916,8 @@ class App(ctk.CTk):
                 crop_side,
             )
             obj_field = fftshift(ifft2(ifftshift(ft_crop))).astype(np.complex64, copy=False)
-            ft_filtered_display = self._vl_expand_crop_to_full_spectrum(ft_raw, crop_model, mask_crop) if return_full_filtered_ft else None
+            ft_filtered_display = self._vl_expand_crop_to_full_spectrum(ft_raw, crop_model,
+                                                                        mask_crop) if return_full_filtered_ft else None
             bbox = crop_model["source_bounds"]
             ref_wave = None
             mask = None
@@ -1960,8 +1980,8 @@ class App(ctk.CTk):
 
         return obj_field, ft_filtered_display, ft_raw
 
-
-    def _vl_apply_cached_model(self, sample: np.ndarray, return_full_filtered_ft: bool = False) -> tuple[np.ndarray, np.ndarray | None, np.ndarray]:
+    def _vl_apply_cached_model(self, sample: np.ndarray, return_full_filtered_ft: bool = False) -> tuple[
+        np.ndarray, np.ndarray | None, np.ndarray]:
         """Reconstruct one frame using the cached Fourier mask and carrier model."""
         fft2 = self._vl_fft2
         ifft2 = self._vl_ifft2
@@ -1976,7 +1996,8 @@ class App(ctk.CTk):
             crop_model = self._vl_model["crop_model"]
             ft_crop = self._vl_apply_crop_model_to_ft(ft_raw, crop_model, mask_crop)
             obj_field = fftshift(ifft2(ifftshift(ft_crop))).astype(np.complex64, copy=False)
-            ft_filtered_full = self._vl_expand_crop_to_full_spectrum(ft_raw, crop_model, mask_crop) if return_full_filtered_ft else None
+            ft_filtered_full = self._vl_expand_crop_to_full_spectrum(ft_raw, crop_model,
+                                                                     mask_crop) if return_full_filtered_ft else None
             return obj_field, ft_filtered_full, ft_raw
 
         ft_filtered = ft_raw * self._vl_model["mask"]
@@ -1985,7 +2006,8 @@ class App(ctk.CTk):
 
         return obj_field, ft_filtered if return_full_filtered_ft else None, ft_raw
 
-    def _vl_estimate_legendre_phase_offset(self, field: np.ndarray, *, remove_piston: bool = True, use_pca: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    def _vl_estimate_legendre_phase_offset(self, field: np.ndarray, *, remove_piston: bool = True,
+                                           use_pca: bool = True) -> tuple[np.ndarray, np.ndarray]:
         """
         Estimate a low-order Legendre phase offset for cached reuse.
 
@@ -2043,10 +2065,11 @@ class App(ctk.CTk):
         y0 = max((h - side) // 2, 0)
         x0 = max((w - side) // 2, 0)
         square = arr[y0:y0 + side, x0:x0 + side]
-        crop_info = {"x0": x0,"y0": y0,"side": side,"original_shape": image.shape,}
+        crop_info = {"x0": x0, "y0": y0, "side": side, "original_shape": image.shape, }
         return square, crop_info
 
-    def _vl_extract_object_field(self,sample: np.ndarray,*,factor: float,rotate: bool,filter_type: str = "Circular") -> tuple[np.ndarray, np.ndarray]:
+    def _vl_extract_object_field(self, sample: np.ndarray, *, factor: float, rotate: bool,
+                                 filter_type: str = "Circular") -> tuple[np.ndarray, np.ndarray]:
         """
         Extracts the Vortex-compensated object field.
 
@@ -2099,8 +2122,8 @@ class App(ctk.CTk):
 
         crop_vortex = 6
         if (
-            fxm >= crop_vortex and fxm < M - crop_vortex and
-            fym >= crop_vortex and fym < N - crop_vortex
+                fxm >= crop_vortex and fxm < M - crop_vortex and
+                fym >= crop_vortex and fym < N - crop_vortex
         ):
             logamp = 10.0 * np.log10(
                 np.abs(fftshift(fft2(fftshift(holo_filtered))) + 1e-6) ** 2
@@ -2134,21 +2157,21 @@ class App(ctk.CTk):
         obj_field = ref_wave * holo_filtered
 
         return obj_field, ft_filtered
-    
-    def _vl_apply_legendre(self,field: np.ndarray,*,remove_piston: bool = True,use_pca: bool = True) -> np.ndarray:
+
+    def _vl_apply_legendre(self, field: np.ndarray, *, remove_piston: bool = True, use_pca: bool = True) -> np.ndarray:
         """
         Applies Legendre phase compensation to the Vortex-compensated field.
         """
         VL = self._VL
         n_rows, n_cols = field.shape
         limit = min(n_rows, n_cols) / 2.0
-        phase_corrected, _coeffs = VL.legendre_compensation(field,limit,RemovePiston=remove_piston,UsePCA=use_pca)
+        phase_corrected, _coeffs = VL.legendre_compensation(field, limit, RemovePiston=remove_piston, UsePCA=use_pca)
         corrected_phase = np.angle(phase_corrected)
         if corrected_phase.shape != field.shape:
-            corrected_phase = cv2.resize(corrected_phase.astype(np.float32),(field.shape[1], field.shape[0]),interpolation=cv2.INTER_LINEAR)
+            corrected_phase = cv2.resize(corrected_phase.astype(np.float32), (field.shape[1], field.shape[0]),
+                                         interpolation=cv2.INTER_LINEAR)
         compensated = np.abs(field) * np.exp(1j * corrected_phase)
         return compensated
-
 
     def _normalize_to_uint8(self, arr: np.ndarray) -> np.ndarray:
         """
@@ -2162,16 +2185,16 @@ class App(ctk.CTk):
             arr = np.abs(arr)
 
         arr = arr.astype(np.float32)
-        arr = np.nan_to_num(arr,nan=0.0,posinf=0.0,neginf=0.0)
+        arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
 
         min_val = float(np.min(arr))
         max_val = float(np.max(arr))
 
         if abs(max_val - min_val) < 1e-12:
-            return np.zeros(arr.shape,dtype=np.uint8)
+            return np.zeros(arr.shape, dtype=np.uint8)
 
         out = (arr - min_val) / (max_val - min_val)
-        out = np.clip(out * 255.0,0.0,255.0)
+        out = np.clip(out * 255.0, 0.0, 255.0)
 
         return out.astype(np.uint8)
 
@@ -2181,11 +2204,11 @@ class App(ctk.CTk):
 
         The input interval [-pi, pi] is mapped to [0, 255], preserving wrapped phase contrast for qualitative visualization.
         """
-        phase = np.asarray(phase,dtype=np.float32)
-        phase = np.nan_to_num(phase,nan=0.0,posinf=0.0,neginf=0.0)
+        phase = np.asarray(phase, dtype=np.float32)
+        phase = np.nan_to_num(phase, nan=0.0, posinf=0.0, neginf=0.0)
 
         out = (phase + np.pi) / (2.0 * np.pi)
-        out = np.clip(out * 255.0,0.0,255.0)
+        out = np.clip(out * 255.0, 0.0, 255.0)
 
         return out.astype(np.uint8)
 
@@ -2197,7 +2220,6 @@ class App(ctk.CTk):
         """
         mag = np.log1p(np.abs(ft))
         return self._normalize_to_uint8(mag)
-
 
     def stop_compensation(self) -> None:
         """
@@ -2275,7 +2297,8 @@ class App(ctk.CTk):
 
     def _comp_reconstruction_loop(self) -> None:
         """Reconstruct the newest available frame and discard obsolete frames."""
-        target_dt = 1.0 / max(float(getattr(self, "source_fps", getattr(self, "_target_reconstruction_fps", 30.0))), 1.0)
+        target_dt = 1.0 / max(float(getattr(self, "source_fps", getattr(self, "_target_reconstruction_fps", 30.0))),
+                              1.0)
 
         while not self._stop_compensation.is_set():
             with self._latest_recon_lock:
@@ -2290,7 +2313,7 @@ class App(ctk.CTk):
             first = not self.first_frame_done
 
             try:
-                data = self._compute_comp_arrays(frame,first=first)
+                data = self._compute_comp_arrays(frame, first=first)
                 data["packet_type"] = "recon"
                 data["frame_index"] = frame_index
                 self._processed_recon_index = frame_index
@@ -2306,7 +2329,6 @@ class App(ctk.CTk):
 
             if sleep_time > 0.0:
                 time.sleep(sleep_time)
-
 
     def _put_comp_packet(self, packet: dict) -> None:
         """
@@ -2426,7 +2448,6 @@ class App(ctk.CTk):
 
         self._mark_hologram_frame_displayed()
 
-
     def _apply_reconstruction_packet(self, data: dict) -> None:
         """
         Apply a reconstruction packet to the right viewer and update the filtered
@@ -2508,7 +2529,9 @@ class App(ctk.CTk):
             if not self._ensure_camera():
                 tk.messagebox.showerror("Camera", "Camera unavailable.")
                 return
-            self._set_source_fps(self._read_capture_fps(self.cap, fallback=float(getattr(self, "camera_target_fps", 30.0))), fallback=float(getattr(self, "camera_target_fps", 30.0)))
+            self._set_source_fps(
+                self._read_capture_fps(self.cap, fallback=float(getattr(self, "camera_target_fps", 30.0))),
+                fallback=float(getattr(self, "camera_target_fps", 30.0)))
             src = "camera"
 
         self._reset_fps_measurements()
@@ -2527,7 +2550,8 @@ class App(ctk.CTk):
         self._force_vl_model_refresh = True
 
         if hasattr(self, "reconstruction_mode_label"):
-            self.reconstruction_mode_label.configure(text=f"Mode: {self.reconstruction_mode_var.get()} | {self.correction_mode_var.get()}")
+            self.reconstruction_mode_label.configure(
+                text=f"Mode: {self.reconstruction_mode_var.get()} | {self.correction_mode_var.get()}")
 
         self._capture_thread = threading.Thread(target=self._comp_capture_loop, args=(src,), daemon=True)
         self._recon_thread = threading.Thread(target=self._comp_reconstruction_loop, args=(), daemon=True)
@@ -2767,10 +2791,10 @@ class App(ctk.CTk):
     '''
 
     def _save_sequence_frame(
-        self,
-        holo_arr: np.ndarray,
-        amp_arr:  np.ndarray | None = None,
-        phase_arr:np.ndarray | None = None
+            self,
+            holo_arr: np.ndarray,
+            amp_arr: np.ndarray | None = None,
+            phase_arr: np.ndarray | None = None
     ) -> None:
         """Internal: write the given arrays as PNGs inside their folders."""
         if not self.sequence_recording or not self.seq_save_root:
@@ -2892,7 +2916,8 @@ class App(ctk.CTk):
         self.video_buffer_raw = []
         self.start_time_fps = time.time()
         self.frame_counter_fps = 0
-        self._set_source_fps(self._read_capture_fps(cap, fallback=float(getattr(self, "camera_target_fps", 30.0))), fallback=float(getattr(self, "camera_target_fps", 30.0)))
+        self._set_source_fps(self._read_capture_fps(cap, fallback=float(getattr(self, "camera_target_fps", 30.0))),
+                             fallback=float(getattr(self, "camera_target_fps", 30.0)))
         self._reset_fps_measurements()
 
         if not getattr(self, "_camera_success_shown", False):
@@ -2938,9 +2963,9 @@ class App(ctk.CTk):
             print(f"[Camera] {message}")
 
     def _make_ctk_image(
-        self,
-        pil_img: Image.Image,
-        max_size: tuple[int, int] | None = None
+            self,
+            pil_img: Image.Image,
+            max_size: tuple[int, int] | None = None
     ) -> ctk.CTkImage:
         """
         Returns a `customtkinter.CTkImage` scaled down (never up) so that it
@@ -3155,10 +3180,14 @@ class App(ctk.CTk):
 
     def _get_current_array(self, target: str) -> np.ndarray | None:
         """Return the ndarray that corresponds to *target*."""
-        if target == "Hologram": return getattr(self, "current_holo_array", None)
-        elif target == "Fourier Transform": return getattr(self, "current_ft_array", None)
-        elif target == "Amplitude": return getattr(self, "current_amplitude_array", None)
-        elif target == "Phase": return getattr(self, "current_phase_array",     None)
+        if target == "Hologram":
+            return getattr(self, "current_holo_array", None)
+        elif target == "Fourier Transform":
+            return getattr(self, "current_ft_array", None)
+        elif target == "Amplitude":
+            return getattr(self, "current_amplitude_array", None)
+        elif target == "Phase":
+            return getattr(self, "current_phase_array", None)
         return None
 
     def _start_live_zoom(self,
@@ -3180,16 +3209,17 @@ class App(ctk.CTk):
         self.zoom_refresh_ms = refresh_ms
 
         # Build the window
-        self.live_zoom_window   = tk.Toplevel(self)
+        self.live_zoom_window = tk.Toplevel(self)
         self.live_zoom_window.title(f"Live Zoom – {target_type}")
-        self.live_zoom_label    = tk.Label(self.live_zoom_window)
+        self.live_zoom_label = tk.Label(self.live_zoom_window)
         self.live_zoom_label.pack()
-        self.live_zoom_active   = True
+        self.live_zoom_active = True
 
         def _on_close() -> None:
             self.live_zoom_active = False
             self.live_zoom_window.destroy()
             self.live_zoom_window = None
+
         self.live_zoom_window.protocol("WM_DELETE_WINDOW", _on_close)
 
         self._update_live_zoom()
@@ -3214,9 +3244,9 @@ class App(ctk.CTk):
             crop = arr[y1:y2, x1:x2]
 
         pil = Image.fromarray(crop)
-        pil = pil.resize((crop.shape[1]*self.live_zoom_scale,
-                           crop.shape[0]*self.live_zoom_scale),
-                          Image.Resampling.LANCZOS)
+        pil = pil.resize((crop.shape[1] * self.live_zoom_scale,
+                          crop.shape[0] * self.live_zoom_scale),
+                         Image.Resampling.LANCZOS)
         tkim = ImageTk.PhotoImage(pil)
         self.live_zoom_label.configure(image=tkim)
         self.live_zoom_label.image = tkim
@@ -3268,7 +3298,7 @@ class App(ctk.CTk):
 
             view_w = base_x1 - base_x0
             view_h = base_y1 - base_y0
-            win_w = max(self._zoom_canvas.winfo_width(),  1)
+            win_w = max(self._zoom_canvas.winfo_width(), 1)
             win_h = max(self._zoom_canvas.winfo_height(), 1)
             scale_x = view_w / win_w
             scale_y = view_h / win_h
@@ -3322,15 +3352,16 @@ class App(ctk.CTk):
         def _on_clear_roi(event):
             self._zoom_roi = None
 
-        self._zoom_canvas.bind("<ButtonPress-1>",   _on_press)
-        self._zoom_canvas.bind("<B1-Motion>",       _on_drag)
+        self._zoom_canvas.bind("<ButtonPress-1>", _on_press)
+        self._zoom_canvas.bind("<B1-Motion>", _on_drag)
         self._zoom_canvas.bind("<ButtonRelease-1>", _on_release)
-        self._zoom_canvas.bind("<ButtonPress-3>",   _on_clear_roi)
+        self._zoom_canvas.bind("<ButtonPress-3>", _on_clear_roi)
 
         def _on_close():
             self._zoom_live = False
             self._zoom_win.destroy()
             self._zoom_win = None
+
         self._zoom_win.protocol("WM_DELETE_WINDOW", _on_close)
 
         self._refresh_zoom_view()
@@ -3352,10 +3383,10 @@ class App(ctk.CTk):
         else:
             arr_view = arr
 
-        win_w = max(self._zoom_canvas.winfo_width(),  1)
+        win_w = max(self._zoom_canvas.winfo_width(), 1)
         win_h = max(self._zoom_canvas.winfo_height(), 1)
         pil = Image.fromarray(arr_view).resize((win_w, win_h),
-                                                 Image.Resampling.NEAREST)
+                                               Image.Resampling.NEAREST)
         tkim = ImageTk.PhotoImage(pil)
 
         if self._zoom_img_id is None:
@@ -3364,12 +3395,12 @@ class App(ctk.CTk):
         else:
             self._zoom_canvas.itemconfig(self._zoom_img_id, image=tkim)
 
-        self._zoom_canvas.image = tkim   # evita GC
+        self._zoom_canvas.image = tkim  # evita GC
         self.after(refresh_ms, self._refresh_zoom_view)
 
     def _on_zoom_wheel(self, event):
         delta = event.delta if hasattr(event, "delta") else (120 if event.num == 4 else -120)
-        step  = 1.1 if delta > 0 else 0.9
+        step = 1.1 if delta > 0 else 0.9
         self._zoom_scale = max(self._zoom_min_scale,
                                min(self._zoom_max_scale, self._zoom_scale * step))
 
@@ -3719,7 +3750,7 @@ class App(ctk.CTk):
         self.buff_holo.clear()
 
         # Pre-fill with the frames already on screen
-        #self._prefill_record_buffer()
+        # self._prefill_record_buffer()
         self.record_start_time = time.perf_counter()
 
         # Flag + UI feedback
@@ -3740,7 +3771,7 @@ class App(ctk.CTk):
         # Pick the correct buffer
         buf = (self.buff_phase if self.target_to_record == "Phase"
                else self.buff_amp if self.target_to_record == "Amplitude"
-               else self.buff_holo)
+        else self.buff_holo)
         if not buf:
             tk.messagebox.showwarning("Record", "Nothing captured yet.")
             return
@@ -3790,7 +3821,7 @@ class App(ctk.CTk):
         mode = ctk.get_appearance_mode()
         fg = self.phase_compensation_frame.cget("fg_color")
         bg_col = fg[1] if isinstance(fg, (tuple, list)) and mode == "Dark" else fg[0] if isinstance(fg, (
-        tuple, list)) else fg
+            tuple, list)) else fg
 
         self.pc_canvas = ctk.CTkCanvas(
             self.pc_container,
@@ -3881,15 +3912,23 @@ class App(ctk.CTk):
         ).grid(row=2, column=1, padx=5, pady=(5, 0), sticky="w")
 
         # Compensation controls panel
-        self.compensate_frame = ctk.CTkFrame(self.phase_compensation_inner_frame, width=PARAMETER_FRAME_WIDTH, height=175)
+        self.compensate_frame = ctk.CTkFrame(self.phase_compensation_inner_frame, width=PARAMETER_FRAME_WIDTH,
+                                             height=175)
         self.compensate_frame.grid(row=3, column=0, sticky="ew", pady=(2, 6))
         self.compensate_frame.grid_propagate(False)
         for col in (0, 1, 2, 3):
             self.compensate_frame.columnconfigure(col, weight=1)
 
-        ctk.CTkLabel(self.compensate_frame, text="Compensation Controls", font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, columnspan=4, padx=10, pady=(8, 4), sticky="w")
+        ctk.CTkLabel(self.compensate_frame, text="Compensation Controls", font=ctk.CTkFont(weight="bold")).grid(row=0,
+                                                                                                                column=0,
+                                                                                                                columnspan=4,
+                                                                                                                padx=10,
+                                                                                                                pady=(
+                                                                                                                8, 4),
+                                                                                                                sticky="w")
 
-        self.compensate_button = ctk.CTkButton(self.compensate_frame, text="⚙ Compensate", width=120, command=self.start_compensation)
+        self.compensate_button = ctk.CTkButton(self.compensate_frame, text="⚙ Compensate", width=120,
+                                               command=self.start_compensation)
         self.compensate_button.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 6))
 
         self.playstop_frame = ctk.CTkFrame(self.compensate_frame, fg_color="transparent")
@@ -3901,19 +3940,26 @@ class App(ctk.CTk):
         self.stop_button = ctk.CTkButton(self.playstop_frame, text="⏹ Stop", width=80, command=self._on_stop)
         self.stop_button.pack(side="left")
 
-        self.reconstruction_mode_label = ctk.CTkLabel(self.compensate_frame, text=f"Mode: {self.reconstruction_mode_var.get()} | {self.correction_mode_var.get()}", font=ctk.CTkFont(size=12, weight="bold"))
+        self.reconstruction_mode_label = ctk.CTkLabel(self.compensate_frame,
+                                                      text=f"Mode: {self.reconstruction_mode_var.get()} | {self.correction_mode_var.get()}",
+                                                      font=ctk.CTkFont(size=12, weight="bold"))
         self.reconstruction_mode_label.grid(row=2, column=0, columnspan=4, padx=10, pady=(0, 4), sticky="w")
 
-        self.alignment_button = ctk.CTkButton(self.compensate_frame, text="Alignment", width=105, command=self._set_alignment_mode)
+        self.alignment_button = ctk.CTkButton(self.compensate_frame, text="Alignment", width=105,
+                                              command=self._set_alignment_mode)
         self.alignment_button.grid(row=3, column=0, padx=(10, 4), pady=(0, 6), sticky="ew")
 
-        self.acquisition_button = ctk.CTkButton(self.compensate_frame, text="Acquisition", width=115, command=self._set_acquisition_mode)
+        self.acquisition_button = ctk.CTkButton(self.compensate_frame, text="Acquisition", width=115,
+                                                command=self._set_acquisition_mode)
         self.acquisition_button.grid(row=3, column=1, padx=4, pady=(0, 6), sticky="ew")
 
-        self.align_once_button = ctk.CTkButton(self.compensate_frame, text="Align Once", width=90, command=self._force_alignment_update)
+        self.align_once_button = ctk.CTkButton(self.compensate_frame, text="Align Once", width=90,
+                                               command=self._force_alignment_update)
         self.align_once_button.grid(row=3, column=2, padx=4, pady=(0, 6), sticky="ew")
 
-        self.correction_mode_menu = ctk.CTkOptionMenu(self.compensate_frame, values=["Vortex", "Vortex + Legendre"], variable=self.correction_mode_var, command=self._on_reconstruction_correction_changed, width=160)
+        self.correction_mode_menu = ctk.CTkOptionMenu(self.compensate_frame, values=["Vortex", "Vortex + Legendre"],
+                                                      variable=self.correction_mode_var,
+                                                      command=self._on_reconstruction_correction_changed, width=160)
         self.correction_mode_menu.grid(row=4, column=0, columnspan=4, padx=10, pady=(0, 8), sticky="ew")
 
         # Record panel
@@ -4048,7 +4094,7 @@ class App(ctk.CTk):
         self.kalman_r_entry.insert(0, "1")
         self.kalman_r_entry.pack(side="left", padx=(0, 5))
 
-        #World coordinates label
+        # World coordinates label
         self.coord_frame = ctk.CTkFrame(self.particle_tracking_frame, fg_color="transparent")
         self.coord_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=5, sticky="w")
 
@@ -4152,7 +4198,7 @@ class App(ctk.CTk):
 
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = ["frame"] + [f"P{pid}_{coord}"
-                                    for coord, pid in df.columns[1:]]
+                                      for coord, pid in df.columns[1:]]
         else:
             new_cols = []
             for col in df.columns:
@@ -4232,7 +4278,7 @@ class App(ctk.CTk):
         # Update all CTkCanvas backgrounds
         for canvas_attr in [
             "filters_canvas", "pc_canvas", "QPI_canvas"
-            ]:
+        ]:
             canvas = getattr(self, canvas_attr, None)
         if canvas is not None:
             canvas.configure(background=color)
@@ -4243,7 +4289,7 @@ class App(ctk.CTk):
             "phase_compensation_frame", "pc_container", "phase_compensation_inner_frame",
             "QPI_frame", "QPI_container", "QPI_inner_frame",
             "viewing_frame"
-            ]:
+        ]:
             frame = getattr(self, frame_attr, None)
         if frame is not None:
             frame.configure(fg_color=color)
@@ -4252,11 +4298,11 @@ class App(ctk.CTk):
         self._sync_canvas_and_frame_bg()
 
     def change_appearance_mode_event(self, new_appearance_mode):
-     if new_appearance_mode == "🏠 Main Menu":
-         self.open_main_menu()
-     else:
-         ctk.set_appearance_mode(new_appearance_mode)
-         self._sync_canvas_and_frame_bg()
+        if new_appearance_mode == "🏠 Main Menu":
+            self.open_main_menu()
+        else:
+            ctk.set_appearance_mode(new_appearance_mode)
+            self._sync_canvas_and_frame_bg()
 
     def open_main_menu(self):
         self.destroy()
@@ -4271,7 +4317,6 @@ class App(ctk.CTk):
         if hasattr(self, "param_button"):
             self.param_button.destroy()
         self.change_menu_to("parameters")
-
 
     def _refresh_ft_display(self):
         """
@@ -4332,7 +4377,7 @@ class App(ctk.CTk):
         for w in self.params_pc_frame.winfo_children():
             w.destroy()
 
-        ctk.CTkLabel(self.params_pc_frame, text="Parameters",font=ctk.CTkFont(weight="bold")).grid(
+        ctk.CTkLabel(self.params_pc_frame, text="Parameters", font=ctk.CTkFont(weight="bold")).grid(
             row=0, column=0, padx=5, pady=5, sticky="w")
 
         # Wavelength
@@ -4386,11 +4431,11 @@ class App(ctk.CTk):
             raise ValueError(f"Cannot convert '{value}' to float.")
 
         factors = {
-            "µm": 1.0,  "Micrometers": 1.0,
+            "µm": 1.0, "Micrometers": 1.0,
             "nm": 1e-3, "Nanometers": 1e-3,
-            "mm": 1e3,  "Millimeters": 1e3,
-            "cm": 1e4,  "Centimeters": 1e4,
-            "m":  1e6,  "Meters": 1e6,
+            "mm": 1e3, "Millimeters": 1e3,
+            "cm": 1e4, "Centimeters": 1e4,
+            "m": 1e6, "Meters": 1e6,
             "in": 2.54e4, "Inches": 2.54e4
         }
         return v * factors.get(unit, 1.0)
@@ -4425,7 +4470,7 @@ class App(ctk.CTk):
 
         return phase_bin.sum(), phase_carr
 
-    def _search_fx_fy(self, holo, fx0, fy0,Fox, Foy, lamb, M, N, dx, dy, k, m, n, G_initial):
+    def _search_fx_fy(self, holo, fx0, fy0, Fox, Foy, lamb, M, N, dx, dy, k, m, n, G_initial):
         paso = 0.2
         G_temp = G_initial
         suma_maxima = 0
@@ -4434,8 +4479,8 @@ class App(ctk.CTk):
         fin = 0
         while fin == 0:
             x_max_out, y_max_out = fx, fy
-            frec_x = np.arange(fx - paso*G_temp, fx + paso*G_temp, paso)
-            frec_y = np.arange(fy - paso*G_temp, fy + paso*G_temp, paso)
+            frec_x = np.arange(fx - paso * G_temp, fx + paso * G_temp, paso)
+            frec_y = np.arange(fy - paso * G_temp, fy + paso * G_temp, paso)
 
             for fy_tmp in frec_y:
                 for fx_tmp in frec_x:
@@ -4627,9 +4672,9 @@ class App(ctk.CTk):
         self.first_frame_done = True
 
     def _reconstruct_and_update_views(
-        self,
-        hologram_gray: np.ndarray,
-        filtered_ft: np.ndarray
+            self,
+            hologram_gray: np.ndarray,
+            filtered_ft: np.ndarray
     ) -> None:
         """
         Reconstruct amplitude and phase while preserving the hologram FT cache.
@@ -4655,8 +4700,8 @@ class App(ctk.CTk):
 
         carrier = np.exp(
             1j * self.k * (
-                np.sin(theta_x) * self.m_mesh * self.dx_um +
-                np.sin(theta_y) * self.n_mesh * self.dy_um
+                    np.sin(theta_x) * self.m_mesh * self.dx_um +
+                    np.sin(theta_y) * self.n_mesh * self.dy_um
             )
         )
 
@@ -4732,8 +4777,8 @@ class App(ctk.CTk):
             self.current_ft_filtered_array
             if self.ft_display_var.get() == "filtered"
             else self.current_ft_unfiltered_array
-        ) 
-        
+        )
+
     def _update_realtime(self) -> None:
         if not self._ensure_camera():
             print("[Camera] Lost connection – realtime loop stopped.")
@@ -4816,7 +4861,8 @@ class App(ctk.CTk):
 
     def release(self):
         os.system("taskkill /f /im python.exe")
- 
+
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()
