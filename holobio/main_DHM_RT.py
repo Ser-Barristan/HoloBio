@@ -1,36 +1,17 @@
-
 import zipfile, io
-import os
-import sys
-from pathlib import Path
-
 import customtkinter as ctk
-
-if __package__ is None or __package__ == "":
-    _THIS_FILE = Path(__file__).resolve()
-    _PACKAGE_DIR = _THIS_FILE.parent
-    _PROJECT_ROOT = _PACKAGE_DIR.parent
-
-    if str(_PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(_PROJECT_ROOT))
-
-    from holobio.parallel_rc import *
-    from holobio import functions_GUI as fGUI
-    from holobio.track_particles_kalman import track_particles_kalman as track
-else:
-    from .parallel_rc import *
-    from . import functions_GUI as fGUI
-    from .track_particles_kalman import track_particles_kalman as track
-
+from .parallel_rc import *
 from PIL import ImageTk, Image
 from tkinter import filedialog, messagebox
 import math
-import cv2, time, tkinter as tk
+import cv2, os, time, tkinter as tk
 from importlib import import_module, reload
+from . import functions_GUI as fGUI
 import threading, queue
 from pandastable.core import Table
 import pandas as pd
 import re
+from .track_particles_kalman import track_particles_kalman as track
 from scipy.ndimage import median_filter
 
 import numpy as np
@@ -623,8 +604,8 @@ class App(ctk.CTk):
         self._init_optimized_reconstruction_state()
         self._init_runtime_timing_state()
 
-        self.viewbox_width = 600
-        self.viewbox_height = 450
+        self.viewbox_width = 470
+        self.viewbox_height = 340
 
         self.init_phase_compensation_frame()
 
@@ -703,8 +684,8 @@ class App(ctk.CTk):
 
     def _on_reconstruction_correction_changed(self, choice: str) -> None:
         """Update the phase-correction protocol and force a fresh carrier model."""
-        if choice not in ("Vortex Only", "Vortex + Cached Legendre"):
-            choice = "Vortex Only"
+        if choice not in ("Vortex", "Vortex + Legendre"):
+            choice = "Vortex"
         self.correction_mode_var.set(choice)
         self._force_vl_model_refresh = True
         if hasattr(self, "vl_settings") and isinstance(self.vl_settings, dict):
@@ -1456,12 +1437,12 @@ class App(ctk.CTk):
             filter_type = "Circular"
 
         operation_mode = getattr(self, "reconstruction_operation_mode", "acquisition")
-        correction_mode = self.correction_mode_var.get() if hasattr(self, "correction_mode_var") else "Vortex Only"
-        apply_legendre = correction_mode == "Vortex + Cached Legendre"
+        correction_mode = self.correction_mode_var.get() if hasattr(self, "correction_mode_var") else "Vortex"
+        apply_legendre = correction_mode == "Vortex + Legendre"
         model_update_interval = 8 if operation_mode == "alignment" else 0
 
         return {
-            "factor": 5.0,
+            "factor": 4.0,
             "rotate": False,
             "filter_type": filter_type,
             "apply_legendre": apply_legendre,
@@ -1470,7 +1451,7 @@ class App(ctk.CTk):
             "max_reconstruction_side": None,
             "model_update_interval": model_update_interval,
             "use_vortex_refinement": operation_mode == "alignment" or bool(getattr(self, "_force_vl_model_refresh", True)),
-            "fast_spectral_crop": bool(self.fast_spectral_crop_var.get()) if hasattr(self, "fast_spectral_crop_var") else True,
+            "fast_spectral_crop": False,
 
             # Preserves the original reconstruction shape without applying a fixed size.
             # When True, the reconstructed object maintains the size of the processed square without additional changes.
@@ -1631,7 +1612,7 @@ class App(ctk.CTk):
         cx = width / 2.0
         cy = height / 2.0
         distance = float(np.hypot(float(fx_peak) - cx, float(fy_peak) - cy))
-        radius = distance / 5.0 if distance > 1e-9 else max(10.0, 0.08 * min(height, width))
+        radius = distance / 4.0 if distance > 1e-9 else max(10.0, 0.08 * min(height, width))
 
         if filter_type == "Rectangular":
             order_mask = self.rectangularMask(height, width, radius, int(round(fy_peak)), int(round(fx_peak))).astype(np.float32)
@@ -3738,7 +3719,8 @@ class App(ctk.CTk):
         self.buff_holo.clear()
 
         # Pre-fill with the frames already on screen
-        self._prefill_record_buffer()
+        #self._prefill_record_buffer()
+        self.record_start_time = time.perf_counter()
 
         # Flag + UI feedback
         self.is_recording = True
@@ -3778,6 +3760,9 @@ class App(ctk.CTk):
                                           else "XVID"))
         h, w = buf[0].shape[:2]
         fps_to_use = getattr(self, "source_fps", 15.0)
+        elapsed = time.perf_counter() - getattr(self, "record_start_time", time.perf_counter())
+        measured_fps = len(buf) / elapsed if elapsed > 0 else getattr(self, "source_fps", 30.0)
+        fps_to_use = measured_fps
         vw = cv2.VideoWriter(path, fourcc, fps_to_use, (w, h), isColor=True)
 
         for f in buf:
@@ -3919,16 +3904,16 @@ class App(ctk.CTk):
         self.reconstruction_mode_label = ctk.CTkLabel(self.compensate_frame, text=f"Mode: {self.reconstruction_mode_var.get()} | {self.correction_mode_var.get()}", font=ctk.CTkFont(size=12, weight="bold"))
         self.reconstruction_mode_label.grid(row=2, column=0, columnspan=4, padx=10, pady=(0, 4), sticky="w")
 
-        self.alignment_button = ctk.CTkButton(self.compensate_frame, text="Alignment Mode", width=105, command=self._set_alignment_mode)
+        self.alignment_button = ctk.CTkButton(self.compensate_frame, text="Alignment", width=105, command=self._set_alignment_mode)
         self.alignment_button.grid(row=3, column=0, padx=(10, 4), pady=(0, 6), sticky="ew")
 
-        self.acquisition_button = ctk.CTkButton(self.compensate_frame, text="Acquisition Mode", width=115, command=self._set_acquisition_mode)
+        self.acquisition_button = ctk.CTkButton(self.compensate_frame, text="Acquisition", width=115, command=self._set_acquisition_mode)
         self.acquisition_button.grid(row=3, column=1, padx=4, pady=(0, 6), sticky="ew")
 
         self.align_once_button = ctk.CTkButton(self.compensate_frame, text="Align Once", width=90, command=self._force_alignment_update)
         self.align_once_button.grid(row=3, column=2, padx=4, pady=(0, 6), sticky="ew")
 
-        self.correction_mode_menu = ctk.CTkOptionMenu(self.compensate_frame, values=["Vortex Only", "Vortex + Cached Legendre"], variable=self.correction_mode_var, command=self._on_reconstruction_correction_changed, width=160)
+        self.correction_mode_menu = ctk.CTkOptionMenu(self.compensate_frame, values=["Vortex", "Vortex + Legendre"], variable=self.correction_mode_var, command=self._on_reconstruction_correction_changed, width=160)
         self.correction_mode_menu.grid(row=4, column=0, columnspan=4, padx=10, pady=(0, 8), sticky="ew")
 
         # Record panel
