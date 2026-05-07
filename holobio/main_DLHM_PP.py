@@ -15,6 +15,87 @@ from . import tools_GUI as tGUI
 from . import functions_GUI as fGUI
 import hashlib
 
+from tkinter import filedialog
+import os
+import cv2 as cv
+
+def batch_reconstruct_folder(self):
+
+    folder = filedialog.askdirectory(title="Select Dataset Folder")
+
+    if not folder:
+        return
+
+    # -----------------------------
+    # GUI parameters
+    # -----------------------------
+    wavelength = float(self.entry_wavelength.get())
+    L = float(self.entry_L.get())
+    Z = float(self.entry_Z.get())
+    dxy = float(self.entry_pitch.get())
+
+    # -----------------------------
+    # Find reference
+    # -----------------------------
+    ref_path = None
+    for f in os.listdir(folder):
+        if "ref" in f.lower():
+            ref_path = os.path.join(folder, f)
+            break
+
+    if ref_path is None:
+        print("No reference found")
+        return
+
+    ref = cv.imread(ref_path, cv.IMREAD_GRAYSCALE).astype(float)
+
+    # -----------------------------
+    # Process all images
+    # -----------------------------
+    for file in os.listdir(folder):
+
+        if "ref" in file.lower():
+            continue
+
+        if file.lower().endswith(("jpg", "png", "bmp", "tif")):
+
+            holo_path = os.path.join(folder, file)
+
+            holo = cv.imread(
+                holo_path,
+                cv.IMREAD_GRAYSCALE
+            ).astype(float)
+
+            if holo.shape != ref.shape:
+                continue
+
+            corrected = holo - ref
+
+            W_c = dxy * corrected.shape[1]
+
+            amp, phase = dlhm_rec(
+                corrected,
+                L * 1000,
+                Z * 1000,
+                W_c,
+                dxy,
+                wavelength
+            )
+
+            phase_wrapped = ((phase + np.pi) % (2*np.pi)) - np.pi
+            phase_img = normalize(phase_wrapped, 255).astype(np.uint8)
+
+            out_path = os.path.join(
+                folder,
+                file.split('.')[0] + "p.png"
+            )
+
+            cv.imwrite(out_path, phase_img)
+
+            print("Saved:", out_path)
+
+    print("Batch complete")
+
 
 class App(ctk.CTk):
     DOWNSAMPLE_FACTOR = 1
